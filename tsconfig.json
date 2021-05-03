@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es3",
+    "sourceMap": true,
+    "outDir": "build",
+    "declaration": true,
+    "lib": ["es2015","dom"]
+  },
+  "exclude": [
+    "node_modules"
+  ],
+    "files": ["src/game.ts"]
+}
