@@ -15,12 +15,10 @@ declare function setup(): void;
 declare function clear(): void;
 declare function play(): void;
 declare function heroTurn(): void;
+declare function formatPos(newPos: number[]): string;
 declare function heroMove(key: string): void;
-declare function detectStone(pos: number[]): boolean;
 declare function robotTurn(): void;
-declare function detectTreasure(robotPos: number[]): string;
-declare function randomMove(robotPos: number[]): string[];
-declare function end(): void;
+declare function end(state: string): void;
 declare class Item {
     location: string;
     constructor(location: string);
@@ -33,12 +31,13 @@ interface canMove {
     moveForward(pos: string): void;
 }
 declare class Hero extends Item implements canMove {
-    detectObstacle(pos: number[]): boolean;
+    handleSituations(pos: string): void;
     moveForward(pos: string): void;
 }
 declare class Robot extends Item implements canMove {
     moveForward(pos: string): void;
-    detectSurrounding(): string[] | "hero" | "treasure";
+    detectSurrounding(): string[];
+    decideAction(): boolean;
 }
 declare class Obstacle extends Item {
 }

@@ -46,6 +46,7 @@ function addItem(block) {
             if (!haveHero) {
                 document.getElementById(block.id).className = "hero";
                 theHero = new Hero(block.id);
+                haveHero = true;
             }
             else {
                 alert("You can only have one hero!");
@@ -111,9 +112,11 @@ function heroTurn() {
         heroMove(key);
     };
 }
+function formatPos(newPos) {
+    return "r" + newPos[0] + "c" + newPos[1];
+}
 function heroMove(key) {
     round++;
-    var oldPos = theHero.getLocation();
     var oldRow = theHero.getRow();
     var oldCol = theHero.getCol();
     var newPos;
@@ -135,118 +138,44 @@ function heroMove(key) {
             break;
     }
     if (newPos[0] >= 0 && newPos[0] < _size && newPos[1] >= 0 && newPos[1] < _size) {
-        if (!detectStone(newPos)) {
-            var newID_1 = "r" + newPos[0] + "c" + newPos[1];
-            var thatClass = document.getElementById(newID_1).className;
-            if (thatClass === "treasure") {
-                treasures.forEach(function (item, index) {
-                    if (item.getLocation() === newID_1) {
-                        heroScore += item.getValue();
-                        console.log(heroScore);
-                        document.getElementById("score").innerHTML = "Hero Score: " + heroScore + " Robots Score:" + robotsScore;
-                        treasures.splice(index, 1);
-                    }
-                });
-                document.getElementById(newID_1).className = "hero";
-                document.getElementById(oldPos).className = "";
-                theHero.moveForward(newID_1);
-            }
-            else if (thatClass === "killer") {
-                document.getElementById(oldPos).className = "";
-                end();
-            }
-            else {
-                document.getElementById(newID_1).className = "hero";
-                document.getElementById(oldPos).className = "";
-                theHero.moveForward(newID_1);
-            }
-        }
-        else {
-            alert("You can't cross a obstacle!");
-        }
+        var newID = formatPos(newPos);
+        theHero.handleSituations(newID);
     }
     else {
         alert("You can't cross the boundary!");
     }
-    if (treasures.length === 0) {
-        end();
-    }
     robotTurn();
 }
-function detectStone(pos) {
-    var target = "r" + pos[0] + "c" + pos[1];
-    var targetName = document.getElementById(target).className;
-    //console.log(targetName);
-    return (targetName === "obstacle");
-    //alert("There is obstacle!");
-}
 function robotTurn() {
+    var robotsWaitList = [];
+    var allCantMove = true;
     robots.forEach(function (robot, index) {
-        console.log(robot.getLocation());
-        var oldRow = robot.getRow();
-        var oldCol = robot.getCol();
-        var oldPos = robot.getLocation();
-        var heroRow = theHero.getRow();
-        var heroCol = theHero.getCol();
-        var heroPos = theHero.getLocation();
-        if (Math.abs(oldRow - heroRow) <= 1 && Math.abs(oldCol - heroCol) <= 1) {
-            document.getElementById(oldPos).className = "";
-            document.getElementById(heroPos).className = "killer";
-            end();
-        }
-        else {
-            var newPos_1 = detectTreasure([oldRow, oldCol]);
-            if (newPos_1 !== "none") {
-                document.getElementById(oldPos).className = "";
-                document.getElementById(newPos_1).className = "killer";
-                robot.moveForward(newPos_1);
-                treasures.forEach(function (item, index) {
-                    if (item.getLocation() === newPos_1) {
-                        robotsScore += item.getValue();
-                        treasures.splice(index, 1);
-                        document.getElementById("score").innerHTML = "Hero Score: " + heroScore + " Robots Score:" + robotsScore;
-                    }
-                });
-            }
-            else {
-                var newLocations = randomMove([oldRow, oldCol]);
-                var randomNum = Math.floor(Math.random() * newLocations.length);
-                console.log(randomNum);
-                document.getElementById(oldPos).className = "";
-                document.getElementById(newLocations[randomNum]).className = "killer";
-                robot.moveForward(newLocations[randomNum]);
-            }
+        var makeMovement = robot.decideAction();
+        if (!makeMovement) {
+            robots.splice(index, 1);
+            robotsWaitList.push(robot);
         }
     });
+    robotsWaitList.forEach(function (robot) {
+        var canMove = robot.decideAction();
+        if (canMove)
+            allCantMove = false;
+    });
+    if (allCantMove)
+        end("cannot move");
 }
-function detectTreasure(robotPos) {
-    for (var rowIndex = (robotPos[0] === 0 ? 0 : robotPos[0] - 1); rowIndex <= (robotPos[0] === _size - 1 ? _size - 1 : robotPos[0] + 1); rowIndex++) {
-        for (var colIndex = (robotPos[1] === 0 ? 0 : robotPos[1] - 1); colIndex <= (robotPos[1] === _size - 1 ? _size - 1 : robotPos[1] + 1); colIndex++) {
-            var tempPos = "r" + rowIndex + "c" + colIndex;
-            var thatName = document.getElementById(tempPos).className;
-            if (thatName === "treasure") {
-                return tempPos;
-            }
-        }
+function end(state) {
+    //alert("Game is over!\nYour score is " + heroScore);
+    console.log(state);
+    if (state === "kill") {
+        alert("You lose!\n\tYour score is: " + heroScore);
     }
-    return "none";
-}
-function randomMove(robotPos) {
-    var possiblePos = [];
-    for (var rowIndex = (robotPos[0] === 0 ? 0 : robotPos[0] - 1); rowIndex <= (robotPos[0] === _size - 1 ? _size - 1 : robotPos[0] + 1); rowIndex++) {
-        for (var colIndex = (robotPos[1] === 0 ? 0 : robotPos[1] - 1); colIndex <= (robotPos[1] === _size - 1 ? _size - 1 : robotPos[1] + 1); colIndex++) {
-            var tempPos = "r" + rowIndex + "c" + colIndex;
-            var thatName = document.getElementById(tempPos).className;
-            if (thatName !== "obstacle" && thatName !== "killer") {
-                possiblePos.push(tempPos);
-            }
-        }
+    else if (state === "no treasure") {
+        alert("You win!\n\tYour score is: " + heroScore);
     }
-    //console.log(possiblePos);
-    return possiblePos;
-}
-function end() {
-    alert("Game is over!\nYour score is " + heroScore.toString());
+    else if (state === "") {
+        alert("Draw Game!\n\tYour score is: " + heroScore);
+    }
     clear();
 }
 var Item = /** @class */ (function () {
@@ -273,12 +202,33 @@ var Hero = /** @class */ (function (_super) {
     function Hero() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
-    Hero.prototype.detectObstacle = function (pos) {
-        var target = "r" + pos[0] + "c" + pos[1];
-        var targetName = document.getElementById(target).className;
-        //console.log(targetName);
-        return (targetName === "obstacle");
-        //alert("There is obstacle!");
+    Hero.prototype.handleSituations = function (pos) {
+        var thatName = document.getElementById(pos).className;
+        if (thatName === "obstacle") {
+            alert("You can't cross a obstacle!");
+        }
+        else {
+            if (thatName === "killer") {
+                document.getElementById(this.getLocation()).className = "";
+                end("kill");
+            }
+            else {
+                if (thatName === "treasure") {
+                    treasures.forEach(function (item, index) {
+                        if (item.getLocation() === pos) {
+                            heroScore += item.getValue();
+                            console.log(heroScore);
+                            document.getElementById("score").innerHTML = "Hero Score: " + heroScore + " Robots Score:" + robotsScore;
+                            treasures.splice(index, 1);
+                        }
+                    });
+                }
+                this.moveForward(pos);
+                if (treasures.length === 0) {
+                    end("no treasure");
+                }
+            }
+        }
     };
     Hero.prototype.moveForward = function (pos) {
         document.getElementById(this.getLocation()).className = "";
@@ -300,20 +250,71 @@ var Robot = /** @class */ (function (_super) {
     Robot.prototype.detectSurrounding = function () {
         var row = this.getRow();
         var col = this.getCol();
-        var availablePlace = [];
+        var availablePlaces = [];
+        var treasures = [];
+        var haveTreasures = false;
         for (var rowIndex = (row === 0 ? 0 : row - 1); rowIndex <= (row === _size - 1 ? _size - 1 : row + 1); rowIndex++) {
             for (var colIndex = (col === 0 ? 0 : col - 1); colIndex <= (col === _size - 1 ? _size - 1 : col + 1); colIndex++) {
-                var tempPos = "r" + rowIndex + "c" + colIndex;
-                var thatPlace = document.getElementById(tempPos).className;
-                if (thatPlace === "hero" || thatPlace === "treasure") {
-                    return thatPlace;
+                var tempPos = formatPos([rowIndex, colIndex]);
+                var thatName = document.getElementById(tempPos).className;
+                if (thatName === "hero") {
+                    return ["hero", tempPos];
                 }
-                else if (thatPlace !== "obstacle") {
-                    availablePlace.push(thatPlace);
+                else if (thatName === "treasure") {
+                    if (!haveTreasures)
+                        haveTreasures = true;
+                    treasures.push(tempPos);
+                }
+                else if (thatName === "" && !haveTreasures) {
+                    availablePlaces.push(tempPos);
                 }
             }
         }
-        return availablePlace;
+        //console.log(treasures);
+        if (haveTreasures) {
+            var random = Math.floor(Math.random() * treasures.length);
+            return ["treasure", treasures[random]];
+        }
+        else {
+            if (availablePlaces.length !== 0) {
+                var random = Math.floor(Math.random() * availablePlaces.length);
+                return ["free", availablePlaces[random]];
+            }
+            else {
+                return ["none"];
+            }
+        }
+    };
+    Robot.prototype.decideAction = function () {
+        var _this = this;
+        var result = this.detectSurrounding();
+        //console.log(result);
+        var type = result[0];
+        if (type === "hero") {
+            this.moveForward(result[1]);
+            end("kill");
+        }
+        else if (type === "treasure") {
+            treasures.forEach(function (item, index) {
+                if (item.getLocation() === result[1]) {
+                    robotsScore += item.getValue();
+                    console.log(heroScore);
+                    document.getElementById("score").innerHTML = "Hero Score: " + heroScore + " Robots Score:" + robotsScore;
+                    treasures.splice(index, 1);
+                    _this.moveForward(result[1]);
+                }
+            });
+            if (treasures.length === 0) {
+                end("no treasure");
+            }
+        }
+        else if (type === "free") {
+            this.moveForward(result[1]);
+        }
+        else {
+            return false;
+        }
+        return true;
     };
     return Robot;
 }(Item));
