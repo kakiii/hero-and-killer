@@ -8,9 +8,7 @@ declare let haveHero: boolean;
 declare let heroScore: number;
 declare let robotsScore: number;
 declare let round: number;
-declare function addItem(block: {
-    id: string;
-}): void;
+declare function addItem(block: Element): void;
 declare function setup(): void;
 declare function clear(): void;
 declare function play(): void;
@@ -31,6 +29,7 @@ interface canMove {
     moveForward(pos: string): void;
 }
 declare class Hero extends Item implements canMove {
+    detectSurrounding(): boolean;
     handleSituations(pos: string): void;
     moveForward(pos: string): void;
 }
